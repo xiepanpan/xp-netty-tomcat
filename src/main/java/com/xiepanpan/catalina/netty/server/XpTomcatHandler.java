@@ -6,6 +6,7 @@ import com.xiepanpan.catalina.http.XpServlet;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
 import io.netty.handler.codec.http.HttpRequest;
+import jacax.core.common.config.CustomConfig;
 import org.apache.log4j.Logger;
 
 import java.util.HashMap;
@@ -25,7 +26,30 @@ public class XpTomcatHandler extends ChannelInboundHandlerAdapter {
     private static final Map<Pattern,Class<?>> servletMapping = new HashMap<Pattern, Class<?>>();
 
     static {
-        Cous
+        CustomConfig.load("web.properties");
+
+        for (String key:CustomConfig.getKeys()) {
+            if (key.startsWith("servlet")) {
+                String name = key.replaceFirst("servlet.", "");
+                if (name.indexOf(".")!=-1) {
+                    name = name.substring(0,name.indexOf("."));
+                } else {
+                    continue;
+                }
+
+                String pattern = CustomConfig.getString("servlet." + name + ".urlPattern");
+                pattern = pattern.replaceAll("\\*",".*");
+                String className = CustomConfig.getString("servlet." + name + ".className");
+                if (!servletMapping.containsKey(pattern)){
+                    try {
+                        servletMapping.put(Pattern.compile(pattern),Class.forName(className));
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+            }
+        }
     }
 
     @Override

@@ -1,12 +1,10 @@
 package jacax.core.common.config;
 
+import org.apache.log4j.Logger;
 import sun.dc.pr.PRError;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * @author: xiepanpan
@@ -14,6 +12,8 @@ import java.util.Properties;
  * @Description:  加载自定义配置
  */
 public class CustomConfig {
+
+    private Logger logger = Logger.getLogger(CustomConfig.class);
 
     private final static String PLACEHOLDER_START = "${";
 
@@ -37,6 +37,7 @@ public class CustomConfig {
                 for (Object key:properties.keySet()) {
                     String keyStr = key.toString();
                     String value = properties.getProperty(keyStr);
+                    logger.info(keyStr+":"+value);
                     ctx.put(keyStr,value);
                 }
             } catch (IOException e) {
@@ -48,6 +49,18 @@ public class CustomConfig {
         }
     }
 
+    /**
+     * 获取所有的key值
+     * @return
+     */
+    public static Set<String> getKeys() {
+        return ctx.keySet();
+    }
+
+    public static String getString(String key) {
+        return ctx.get(key);
+    }
+
     private void resolvePlaceHolders(Properties properties) {
         Iterator<Map.Entry<Object, Object>> iterator = properties.entrySet().iterator();
 
@@ -55,11 +68,25 @@ public class CustomConfig {
             Map.Entry<Object, Object> entry = iterator.next();
             Object value = entry.getValue();
             if (value!=null && String.class.isInstance(value)) {
-                resolvePlaceHolder(properties,value);
+                String resolved = resolvePlaceHolder(properties, (String) value);
+                if (!value.equals(resolved)) {
+                    if (resolved == null) {
+                        iterator.remove();
+                    } else {
+                        entry.setValue(resolved);
+                    }
+                }
+
             }
         }
     }
 
+    /**
+     * 解析占位符
+     * @param properties
+     * @param value
+     * @return
+     */
     private String resolvePlaceHolder(Properties properties, String value) {
         if (value.indexOf(PLACEHOLDER_START)<0) {
             return value;

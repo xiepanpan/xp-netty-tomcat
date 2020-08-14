@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static io.netty.handler.codec.http.HttpHeaderNames.*;
+import static io.netty.handler.codec.http.HttpVersion.HTTP_1_1;
 
 /**
  * @author: xiepanpan
@@ -21,6 +22,11 @@ public class XpResponse {
     private ChannelHandlerContext context;
     private HttpRequest request;
     private static Map<Integer, HttpResponseStatus> statusMap = new HashMap<Integer, HttpResponseStatus>();
+
+    static {
+        statusMap.put(200,HttpResponseStatus.OK);
+        statusMap.put(404,HttpResponseStatus.NOT_FOUND);
+    }
 
     public XpResponse(ChannelHandlerContext context, HttpRequest request) {
         this.context = context;
@@ -46,7 +52,7 @@ public class XpResponse {
     public void write(String outString,Integer status) {
         try {
             FullHttpResponse response = new DefaultFullHttpResponse(
-                    HttpVersion.HTTP_1_1,
+                    HTTP_1_1,
                     statusMap.get(status),
                     Unpooled.wrappedBuffer(outString.getBytes("UTF-8")));
             response.headers().set(CONTENT_TYPE,"text/json");
@@ -59,7 +65,7 @@ public class XpResponse {
         } catch (UnsupportedEncodingException e) {
             e.printStackTrace();
         } finally {
-            context.close();
+            context.flush();
         }
     }
 }
